@@ -1,0 +1,119 @@
+<?php
+session_start();
+require 'config.php';
+
+if (isset($_POST['login'])) {
+
+    $username = trim($_POST['username']);
+    $password = trim($_POST['password']);
+
+    // Check user function
+    function checkUser($conn, $username, $table) {
+
+        $stmt = $conn->prepare("SELECT * FROM $table WHERE username = ?");
+        $stmt->bind_param("s", $username);
+
+        $stmt->execute();
+
+        $result = $stmt->get_result();
+
+        return $result->fetch_assoc();
+    }
+
+    // Check Admin Login
+    $admin = checkUser($conn, $username, "admin_login");
+
+    if ($admin && base64_decode($admin['password']) === $password) {
+
+        $_SESSION['user_id'] = $admin['sno'];
+        $_SESSION['username'] = $admin['username'];
+
+        header("Location: dashboard.php");
+        exit();
+    }
+
+    // Check Student Login
+    $student = checkUser($conn, $username, "student_login");
+
+    if ($student && base64_decode($student['password']) === $password) {
+
+        $_SESSION['user_id'] = $student['sno'];
+        $_SESSION['username'] = $student['username'];
+
+        header("Location: student_dashboard.php");
+        exit();
+    }
+
+    // Invalid Login
+    $error = "Invalid Username or Password!";
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LMS Login</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+
+        body{
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:#f4f4f4;
+        }
+
+        .login-card{
+            width:400px;
+            padding:30px;
+            border-radius:10px;
+            background:white;
+            box-shadow:0px 0px 10px rgba(0,0,0,0.2);
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="login-card">
+
+    <h3 class="text-center mb-4">Library Management System</h3>
+
+    <?php
+        if(isset($error)){
+            echo "<p class='text-danger text-center'>$error</p>";
+        }
+    ?>
+
+    <form method="POST">
+
+        <div class="mb-3">
+            <label>Username</label>
+            <input type="text" name="username" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+            <label>Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+
+        <button type="submit" name="login" class="btn btn-primary w-100">
+            Login
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>
